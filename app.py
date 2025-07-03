@@ -31,15 +31,22 @@ import seaborn as sns
 st.set_page_config(page_title="🏦 Bank Customer Analytics", layout="wide")
 st.set_page_config(
     page_title="🏦 Bank Customer Analytics",
+    page_icon="🏦",
     layout="wide",
-    theme={
-        "base": "light",
-        "backgroundColor": "#ffffff",
-        "secondaryBackgroundColor": "#f9f9f9",
-        "textColor": "#000000",
-        "primaryColor": "#2e7d32"   # or any accent you like
-    },
+    initial_sidebar_state="auto",   # optional
 )
+st.markdown(
+    """
+    <style>
+        /* make absolutely every bit of text black */
+        [data-testid="stApp"], [data-testid="stApp"] * { 
+            color: #000000 !important; 
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 
 st.markdown(
     """
