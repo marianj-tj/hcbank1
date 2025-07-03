@@ -1,11 +1,10 @@
 # ------------------------------------------------------------
-# Bank Customer Analytics Dashboard  
-# (Light mode, black text, objectives/how‑to in sidebar, full feature set)  
+# Bank Customer Analytics Dashboard  (Unified v2)                                                   
 # ------------------------------------------------------------
-# ▸ Global light theme & black text  
-# ▸ Upload + objectives + how‑to + segment filters in sidebar  
-# ▸ Tabs: Data Viz · Classification · Clustering · Assoc Rules · Regression · Time Series  
-# ▸ Version‑safe RMSE calculation (old/new scikit‑learn)  
+# ▸ Global light theme & black text                                                         
+# ▸ Sidebar flow:   Upload ➜ Info ➜ Objectives ➜ How‑to ➜ Segment filters                   
+# ▸ Tabs (top):     Data Viz · Classification · Clustering · Association · Regression · TS  
+# ▸ Original analyses preserved, version‑safe RMSE, elbow chart, etc.                       
 # ------------------------------------------------------------
 
 import streamlit as st
@@ -25,7 +24,9 @@ import plotly.express as px
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# ---------------- Page config & CSS ----------------
+# --------------------------------------------------
+# 1️⃣  Page config & global CSS (light + black text)
+# --------------------------------------------------
 st.set_page_config(page_title="🏦 Bank Customer Analytics", layout="wide")
 LIGHT_CSS = """
 <style>
@@ -37,62 +38,65 @@ html, body, [data-testid='stApp'], .main {
 """
 st.markdown(LIGHT_CSS, unsafe_allow_html=True)
 
-# ---------------- Sidebar: upload + info + static text -------------
+# --------------------------------------------------
+# 2️⃣  SIDEBAR – Upload, info, objectives, how‑to
+# --------------------------------------------------
 with st.sidebar:
     st.title("🏦 Bank Analytics Dashboard")
     uploaded_file = st.file_uploader("Upload Excel dataset (with 'Cleaned data' sheet)", type=["xlsx"])
     st.markdown("---")
-    st.info("1. Upload data → 2. Set filters → 3. Explore tabs → 4. Download insights!", icon="ℹ️")
+    st.info("1. Upload ▶ 2. Filter ▶ 3. Explore ▶ 4. Download", icon="ℹ️")
 
     st.markdown("## 🎯 Objectives")
     st.markdown("""
-- **Predict Customer Churn** for retention  
-- **Estimate Satisfaction Scores** to focus on at‑risk clients  
-- **Segment Customers** for personalised offers  
-- **Identify High‑Retention Patterns** to build loyalty  
-- **Quantify FinAdvisor Impact** for a tech business case
+- **Predict Customer Churn**  
+- **Estimate Satisfaction Scores**  
+- **Segment Customers**  
+- **Identify Retention Patterns**  
+- **Quantify FinAdvisor Impact**
 """)
 
     st.markdown("## 💡 How to Use")
     st.markdown("""
 1. Upload your **Cleaned data** sheet  
-2. Adjust **Segment Filters** below  
-3. Explore the top‑level analysis tabs  
-4. Download or screenshot results for action
+2. Adjust **Segment Filters** below  
+3. Switch between analysis tabs  
+4. Download / screenshot insights
 """)
     st.markdown("---")
 
-# --------------- Halt if no data --------------------
+# --------------------------------------------------
+# 3️⃣  Data loading guard
+# --------------------------------------------------
 if uploaded_file is None and 'df' not in st.session_state:
-    st.warning('📁 Please upload your Excel file to unlock dashboard features.')
+    st.warning('📁 Upload an Excel file to unlock dashboard features.')
     st.stop()
 
-# --------------- Load data --------------------------
 if uploaded_file is not None:
     try:
         st.session_state['df'] = pd.read_excel(uploaded_file, sheet_name='Cleaned data')
     except Exception as e:
-        st.error(f'Error loading data: {e}')
+        st.error(f"Error loading data: {e}")
         st.stop()
 
 df: pd.DataFrame = st.session_state['df']
 
-# --------------- Sidebar: dynamic filters -----------
+# --------------------------------------------------
+# 4️⃣  Sidebar – dynamic segment filters
+# --------------------------------------------------
 with st.sidebar:
-    st.subheader('Segment Filters')
+    st.subheader('Segment Filters')
     col1, col2 = st.columns(2)
     with col1:
         gender_filter = st.multiselect('Gender', df['Gender'].unique().tolist(), default=df['Gender'].unique().tolist())
-        account_filter = st.multiselect('Account Type', df['Account_Type'].unique().tolist(), default=df['Account_Type'].unique().tolist())
+        account_filter = st.multiselect('Account Type', df['Account_Type'].unique().tolist(), default=df['Account_Type'].unique().tolist())
         region_filter = st.multiselect('Region', df['Region'].unique().tolist(), default=df['Region'].unique().tolist())
     with col2:
-        marital_filter = st.multiselect('Marital Status', df['Marital_Status'].unique().tolist(), default=df['Marital_Status'].unique().tolist())
-        loan_type_filter = st.multiselect('Loan Type', df['Loan_Type'].unique().tolist(), default=df['Loan_Type'].unique().tolist())
+        marital_filter = st.multiselect('Marital Status', df['Marital_Status'].unique().tolist(), default=df['Marital_Status'].unique().tolist())
+        loan_type_filter = st.multiselect('Loan Type', df['Loan_Type'].unique().tolist(), default=df['Loan_Type'].unique().tolist())
 
-    age_range = st.slider('Age Range', int(df['Age'].min()), int(df['Age'].max()),
-                          (int(df['Age'].min()), int(df['Age'].max())))
-    income_range = st.slider('Annual Income', int(df['Annual_Income'].min()), int(df['Annual_Income'].max()),
-                             (int(df['Annual_Income'].min()), int(df['Annual_Income'].max())))
+    age_range = st.slider('Age Range', int(df['Age'].min()), int(df['Age'].max()), (int(df['Age'].min()), int(df['Age'].max())))
+    income_range = st.slider('Annual Income', int(df['Annual_Income'].min()), int(df['Annual_Income'].max()), (int(df['Annual_Income'].min()), int(df['Annual_Income'].max())))
 
 @st.cache_data(show_spinner=False)
 def apply_filters(data: pd.DataFrame) -> pd.DataFrame:
@@ -108,7 +112,9 @@ def apply_filters(data: pd.DataFrame) -> pd.DataFrame:
 
 filtered_df = apply_filters(df)
 
-# ---------------- Tabs (analytics only) --------------
+# --------------------------------------------------
+# 5️⃣  Top‑level analysis tabs
+# --------------------------------------------------
 TAB_NAMES = [
     '📊 Data Visualisation',
     '🤖 Classification',
@@ -119,75 +125,98 @@ TAB_NAMES = [
 ]
 T_VIZ, T_CLASSIFY, T_CLUSTER, T_ASSOC, T_REGR, T_TS = st.tabs(TAB_NAMES)
 
-# ====================================================
-# 📊 DATA VISUALISATION TAB
-# ====================================================
+# ==================================================
+# 📊 DATA VISUALISATION
+# ==================================================
 with T_VIZ:
-    st.header('📊 Data Visualisation')
+    st.header('📊 Data Visualisation')
 
     if filtered_df.empty:
-        st.warning('No records match your filter selection. Try adjusting filters.')
+        st.warning('No records match current filters.')
         st.stop()
 
     k1, k2, k3 = st.columns(3)
-    k1.metric('Churn Rate (%)', f"{filtered_df['Churn_Label'].mean()*100:.2f}" if 'Churn_Label' in filtered_df else 'N/A')
-    k2.metric('Avg. Satisfaction', f"{filtered_df['Customer_Satisfaction_Score'].mean():.2f}" if 'Customer_Satisfaction_Score' in filtered_df else 'N/A')
-    k3.metric('Avg. Account Balance', f"{filtered_df['Account_Balance'].mean():,.0f}" if 'Account_Balance' in filtered_df else 'N/A')
-    st.markdown('---')
+    k1.metric('Churn Rate (%)', f"{filtered_df['Churn_Label'].mean()*100:.2f}" if 'Churn_Label' in filtered_df.columns else 'N/A')
+    k2.metric('Avg. Satisfaction', f"{filtered_df['Customer_Satisfaction_Score'].mean():.2f}" if 'Customer_Satisfaction_Score' in filtered_df.columns else 'N/A')
+    k3.metric('Avg. Account Balance', f"{filtered_df['Account_Balance'].mean():,.0f}" if 'Account_Balance' in filtered_df.columns else 'N/A')
+    st.divider()
 
-    # Example visualisations (add more as needed)
+    # --- Churn by Account Type ---
     if {'Account_Type', 'Churn_Label'}.issubset(filtered_df.columns):
         churn_rate = filtered_df.groupby('Account_Type')['Churn_Label'].mean().reset_index()
-        fig = px.bar(churn_rate, x='Account_Type', y='Churn_Label', text_auto='.2%', color='Churn_Label',
-                     color_continuous_scale='Reds')
-        fig.update_layout(showlegend=False, yaxis_title='Churn Rate')
+        fig = px.bar(churn_rate, x='Account_Type', y='Churn_Label', text_auto='.2%', color='Churn_Label', color_continuous_scale='Reds')
+        fig.update_layout(showlegend=False, yaxis_title='Churn Rate')
         st.plotly_chart(fig, use_container_width=True)
 
-# ====================================================
-# 🤖 CLASSIFICATION TAB
-# ====================================================
+    # --- Avg Balance by Region ---
+    if {'Region', 'Account_Balance'}.issubset(filtered_df.columns):
+        bal = filtered_df.groupby('Region')['Account_Balance'].mean().reset_index()
+        fig = px.bar(bal, x='Region', y='Account_Balance', text_auto='.2s', color='Account_Balance', color_continuous_scale='Blues')
+        st.plotly_chart(fig, use_container_width=True)
+
+    # --- Churn by Age Group ---
+    if {'Age', 'Churn_Label'}.issubset(filtered_df.columns):
+        bins = [17, 25, 35, 45, 55, 65, 80]
+        labels = ['18‑24', '25‑34', '35‑44', '45‑54', '55‑64', '65+']
+        tmp = filtered_df.copy()
+        tmp['Age_Group'] = pd.cut(tmp['Age'], bins=bins, labels=labels, include_lowest=True)
+        cg = tmp.groupby('Age_Group')['Churn_Label'].mean().reset_index()
+        fig = px.line(cg, x='Age_Group', y='Churn_Label', markers=True)
+        fig.update_traces(line_color='red')
+        st.plotly_chart(fig, use_container_width=True)
+
+    # --- Satisfaction by Account Type ---
+    if {'Account_Type', 'Customer_Satisfaction_Score'}.issubset(filtered_df.columns):
+        sat = filtered_df.groupby('Account_Type')['Customer_Satisfaction_Score'].mean().reset_index()
+        fig = px.bar(sat, x='Account_Type', y='Customer_Satisfaction_Score', text_auto='.2f', color='Customer_Satisfaction_Score', color_continuous_scale='Greens')
+        st.plotly_chart(fig, use_container_width=True)
+
+    # --- Loan Amount by Loan Type ---
+    if {'Loan_Type', 'Loan_Amount'}.issubset(filtered_df.columns):
+        loan = filtered_df.groupby('Loan_Type')['Loan_Amount'].sum().reset_index().sort_values('Loan_Amount', ascending=False)
+        fig = px.bar(loan, x='Loan_Type', y='Loan_Amount', text_auto='.2s', color='Loan_Amount', color_continuous_scale='Viridis')
+        st.plotly_chart(fig, use_container_width=True)
+
+    # --- Credit Score Distribution ---
+    if {'Churn_Label', 'Credit_Score'}.issubset(filtered_df.columns):
+        fig = px.box(filtered_df, x='Churn_Label', y='Credit_Score', color='Churn_Label', labels={'Churn_Label': 'Churned'}, points='all')
+        fig.update_xaxes(tickvals=[0, 1], ticktext=['Not Churned', 'Churned'])
+        st.plotly_chart(fig, use_container_width=True)
+
+    # --- Branch count ---
+    if 'Branch' in filtered_df.columns:
+        top_b = filtered_df['Branch'].value_counts().head(10).reset_index()
+        top_b.columns = ['Branch', 'Count']
+        fig = px.bar(top_b, x='Branch', y='Count', color='Count', color_continuous_scale='Teal')
+        st.plotly_chart(fig, use_container_width=True)
+
+    # --- Transaction Type Pie ---
+    if 'Transaction_Type' in filtered_df.columns:
+        trx = filtered_df['Transaction_Type'].value_counts().reset_index()
+        trx.columns = ['Type', 'Count']
+        fig = px.pie(trx, names='Type', values='Count', hole=0.3)
+        st.plotly_chart(fig, use_container_width=True)
+
+    # --- Monthly Transaction Trend ---
+    if {'Transaction_Date', 'Transaction_Amount'}.issubset(filtered_df.columns):
+        tmp = filtered_df.copy()
+        tmp['Transaction_Month'] = pd.to_datetime(tmp['Transaction_Date']).dt.to_period('M').astype(str)
+        mt = tmp.groupby('Transaction_Month')['Transaction_Amount'].sum().reset_index()
+        fig = px.line(mt, x='Transaction_Month', y='Transaction_Amount', markers=True)
+        st.plotly_chart(fig, use_container_width=True)
+
+    # --- Correlation Heatmap ---
+    num_cols = filtered_df.select_dtypes(include='number').drop(columns=['Churn_Label'], errors='ignore')
+    if num_cols.shape[1] > 1:
+        corr = num_cols.corr()
+        fig_hm, ax = plt.subplots(figsize=(10, 6))
+        sns.heatmap(corr, annot=True, cmap='coolwarm', fmt='.2f', ax=ax)
+        st.pyplot(fig_hm)
+
+# ==================================================
+# 🤖 CLASSIFICATION
+# ==================================================
 with T_CLASSIFY:
-    st.header('🤖 Churn Prediction (Classification)')
+    st.header('🤖 Churn Prediction (Classification)')
     target = 'Churn_Label'
-    drop_cols = ['Customer_ID', 'Transaction_Date', 'Account_Open_Date', 'Last_Transaction_Date',
-                 'Churn_Timeframe', 'Simulated_New_Churn_Label']
-
-    if target not in filtered_df.columns:
-        st.warning('Churn_Label column missing.')
-    elif filtered_df[target].nunique() < 2:
-        st.warning('Need both classes in filtered data. Adjust filters.')
-    else:
-        X = filtered_df.drop(columns=drop_cols + [target], errors='ignore')
-        y = filtered_df[target]
-
-        X_enc = X.copy()
-        for c in X_enc.select_dtypes(include=['object', 'category']):
-            X_enc[c] = LabelEncoder().fit_transform(X_enc[c].astype(str))
-        X_enc = X_enc.fillna(0)
-
-        X_train, X_test, y_train, y_test = train_test_split(X_enc, y, test_size=0.25,
-                                                            random_state=42, stratify=y)
-        with st.spinner('Training Random Forest ...'):
-            clf = RandomForestClassifier(random_state=42)
-            clf.fit(X_train, y_train)
-            y_pred = clf.predict(X_test)
-            y_prob = clf.predict_proba(X_test)[:, 1]
-
-        st.metric('Accuracy', f"{accuracy_score(y_test, y_pred):.2%}")
-        cm = confusion_matrix(y_test, y_pred)
-        st.write('Confusion Matrix:', cm)
-
-        fpr, tpr, _ = roc_curve(y_test, y_prob)
-        auc_val = auc(fpr, tpr)
-        fig_roc, ax = plt.subplots()
-        ax.plot(fpr, tpr, label=f'AUC={auc_val:.2f}')
-        ax.plot([0, 1], [0, 1], 'k--')
-        ax.set_xlabel('False Positive Rate'); ax.set_ylabel('True Positive Rate'); ax.legend()
-        st.pyplot(fig_roc)
-
-# ====================================================
-# 🧩 CLUSTERING TAB
-# ====================================================
-with T_CLUSTER:
-    st.header('🧩 Customer Clustering')
-    numeric_exclude = ['Customer_ID', 'Churn_Label', 'Simulated_New_Churn
+    drop_cols = ['Customer_ID', 'Transaction_Date', 'Account_Open_Date', 'Last_Transaction_Date', 'Churn_Timeframe', '
