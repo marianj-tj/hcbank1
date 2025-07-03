@@ -29,6 +29,18 @@ import seaborn as sns
 # 1️⃣  Page config & CSS
 # --------------------------------------------------
 st.set_page_config(page_title="🏦 Bank Customer Analytics", layout="wide")
+st.set_page_config(
+    page_title="🏦 Bank Customer Analytics",
+    layout="wide",
+    theme={
+        "base": "light",
+        "backgroundColor": "#ffffff",
+        "secondaryBackgroundColor": "#f9f9f9",
+        "textColor": "#000000",
+        "primaryColor": "#2e7d32"   # or any accent you like
+    },
+)
+
 st.markdown(
     """
     <style>
