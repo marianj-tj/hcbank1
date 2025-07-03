@@ -360,11 +360,7 @@ with T_REGR:
 
     targets = [
         c
-        for c in [
-            "Account_Balance",
-            "Annual_Income",
-            "Customer_Satisfaction_Score",
-        ]
+        for c in ["Account_Balance", "Annual_Income", "Customer_Satisfaction_Score"]
         if c in filtered_df.columns
     ]
 
@@ -372,18 +368,31 @@ with T_REGR:
         st.warning("No numeric targets available.")
     else:
         y_col = st.selectbox("Target variable", targets)
-        X = filtered_df.drop(
-            columns=[
-                "Customer_ID",
-                y_col,
-                "Churn_Label",
-                "Simulated_New_Churn_Label",
-            ],
-            errors="ignore",
-        )
+
+        # ---- Build feature matrix ----
+        base_drop = [
+            "Customer_ID",
+            y_col,
+            "Churn_Label",
+            "Simulated_New_Churn_Label",
+            "Churn_Timeframe",
+            "Transaction_Date",
+            "Account_Open_Date",
+            "Last_Transaction_Date",
+        ]
+        X = filtered_df.drop(columns=base_drop, errors="ignore")
+
+        # Drop all datetime columns
+        dt_cols = X.select_dtypes(include=["datetime64", "datetime64[ns]"]).columns
+        X = X.drop(columns=dt_cols)
+
+        # Encode categoricals & booleans
         X_enc = X.copy()
         for col in X_enc.select_dtypes(include=["object", "category"]):
             X_enc[col] = LabelEncoder().fit_transform(X_enc[col].astype(str))
+        for col in X_enc.select_dtypes(include=["bool"]):
+            X_enc[col] = X_enc[col].astype(int)
+
         y = filtered_df[y_col]
 
         X_train, X_test, y_train, y_test = train_test_split(
@@ -393,7 +402,7 @@ with T_REGR:
         reg = LinearRegression().fit(X_train, y_train)
         y_pred = reg.predict(X_test)
 
-        # Version-safe RMSE
+        # version-tolerant RMSE
         try:
             rmse_val = mean_squared_error(y_test, y_pred, squared=False)
         except TypeError:
