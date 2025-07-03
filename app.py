@@ -35,30 +35,22 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="auto",   # optional
 )
-st.markdown(
-    """
-    <style>
-        /* make absolutely every bit of text black */
-        [data-testid="stApp"], [data-testid="stApp"] * { 
-            color: #000000 !important; 
-        }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+# ---- GLOBAL CSS: force light background and pure-black text everywhere ----
+st.markdown("""
+<style>
+    /* Main page */
+    html, body, [data-testid='stApp'], .main {
+        background-color: #f9f9f9 !important;
+        color: #000000 !important;
+    }
+    /* Sidebar (container + every child element) */
+    [data-testid="stSidebar"], [data-testid="stSidebar"] * {
+        background-color: #f9f9f9 !important;
+        color: #000000 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
 
-
-st.markdown(
-    """
-    <style>
-        html, body, [data-testid='stApp'], .main {
-            background-color: #f9f9f9 !important;
-            color: #000000 !important;
-        }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
 
 # --------------------------------------------------
 # 2️⃣  SIDEBAR – upload + static guidance
