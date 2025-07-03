@@ -35,21 +35,30 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="auto",   # optional
 )
-# ---- GLOBAL CSS: force light background and pure-black text everywhere ----
-st.markdown("""
-<style>
-    /* Main page */
-    html, body, [data-testid='stApp'], .main {
-        background-color: #f9f9f9 !important;
-        color: #000000 !important;
-    }
-    /* Sidebar (container + every child element) */
-    [data-testid="stSidebar"], [data-testid="stSidebar"] * {
-        background-color: #f9f9f9 !important;
-        color: #000000 !important;
-    }
-</style>
-""", unsafe_allow_html=True)
+# ---- GLOBAL CSS: force light background + true-black text everywhere ----
+st.markdown(
+    """
+    <style>
+        /* whole app */
+        html, body, [data-testid="stApp"], .main {
+            background-color: #f9f9f9 !important;   /* light */
+            color: #000000 !important;               /* black */
+        }
+
+        /* sidebar container + every child element */
+        [data-testid="stSidebar"], [data-testid="stSidebar"] * {
+            background-color: #f9f9f9 !important;
+            color: #000000 !important;
+        }
+
+        /* metric numbers & labels (they ignore inheriting text-color) */
+        .stMetric > div > div {
+            color: #000000 !important;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 
 # --------------------------------------------------
